@@ -1,0 +1,5 @@
+# Build output (regenerable from source and the pinned archive)
+/build/
+
+# macOS Finder metadata
+.DS_Store

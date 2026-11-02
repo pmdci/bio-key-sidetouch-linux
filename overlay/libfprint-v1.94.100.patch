@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# Copyright (C) 2026 Pedro Innecco <https://pedroinnecco.com>
+
+diff --git a/libfprint/meson.build b/libfprint/meson.build
+index f11533c..770251e 100644
+--- a/libfprint/meson.build
++++ b/libfprint/meson.build
+@@ -139,6 +139,8 @@ driver_sources = {
+     'focaltech_moc' : files('drivers/focaltech_moc/focaltech_moc.c'),
+     'mafpmoc' : files('drivers/mafpmoc/mafpmoc.c'),
+     'secugen' : files('drivers/secugen.c'),
++    # SideTouch: sources are in drivers/sidetouch/meson.build (libsidetouch).
++    'sidetouch' : files(),
+ }
+ 
+ helper_sources = {
+@@ -250,11 +252,14 @@ libfprint_private = static_library('fprint-private',
+     link_with: libnbis,
+     install: false)
+ 
++# SideTouch (2963:2001): built as its own libraries; see drivers/sidetouch/meson.build.
++subdir('drivers/sidetouch')
++
+ libfprint_drivers = static_library('fprint-drivers',
+     sources: drivers_sources,
+     c_args: drivers_cflags,
+     dependencies: deps,
+-    link_with: libfprint_private,
++    link_with: [libfprint_private, libsidetouch],
+     install: false)
+ 
+ mapfile = files('libfprint.ver')[0]
+diff --git a/meson.build b/meson.build
+index ab09dc1..6e8ca94 100644
+--- a/meson.build
++++ b/meson.build
+@@ -147,6 +147,7 @@ drivers_info = {
+     'focaltech_moc': {},
+     'mafpmoc': {},
+     'secugen': {},
++    'sidetouch': {},
+ 
+     # SPI driver (non-optional if SPI is available)
+     'elanspi': { 'spi': true, 'helper': ['udev'], 'optional': not have_spi },
+diff --git a/tests/meson.build b/tests/meson.build
+index aad0675..a8eec34 100644
+--- a/tests/meson.build
++++ b/tests/meson.build
+@@ -292,7 +292,8 @@ else
+         args: ['-c', 'exit 77']
+     )
+ 
+-    foreach driver_test: drivers_tests
++    # drivers_tests is a dict (upstream v1.94.100 fails here without introspection)
++    foreach driver_test, driver_args: drivers_tests
+         test(driver_test,
+             sh,
+             args: ['-c', 'exit 77']
+@@ -468,3 +469,6 @@ if valgrind.found() and libfprint_sanitizers.length() == 0
+             'LIBFPRINT_TEST_WRAPPER=' + ' '.join(libfprint_wrapper),
+         ])
+ endif
++
++# SideTouch (2963:2001) offline tests.
++subdir('sidetouch')
